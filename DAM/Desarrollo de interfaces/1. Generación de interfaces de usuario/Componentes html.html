@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Elementos HTML</title>
+</head>
+<body>
+  
+  <h2>Desplegable</h2>
+  <select>
+    <option>Morado</option>
+    <option>Verde</option>
+    <option>Azul</option>
+  </select>
+  
+  <h2>Botón con CSS básico</h2>
+  <style>
+    #cssbasico {
+      border: none;
+      background: blue;
+      color: white;
+    }
+  </style>
+  <button id="cssbasico">Púlsame</button>
+  
+  <h2>Botón con imagen</h2>
+  <style>
+    #botonimg {
+      width: 250px;
+      height: 250px;
+      background: url(boton.png);
+      border: none;
+    }
+  </style>
+  <button id="botonimg"></button>
+  <script>
+    document.querySelector("#botonimg").onclick = function() {
+      alert("Has hecho click");
+    }
+  </script>
+  
+  <h2>CSS puro</h2>
+  <style>
+    #csspuro {
+      box-shadow: inset 32px 19px 17px -13px #23395e;
+      background: linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+      background-color: #2e466e;
+      border-radius: 7px;
+      border: 1px solid #1f2f47;
+      display: inline-block;
+      cursor: pointer;
+      color: #ffffff;
+      font-family: Arial;
+      font-size: 15px;
+      padding: 14px 37px;
+      text-decoration: none;
+      text-shadow: 0px 0px 21px #263666;
+    }
+    #csspuro:hover {
+      background: linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+      background-color: #415989;
+    }
+    #csspuro:active {
+      position: relative;
+      top: 1px;
+    }
+  </style>
+  <button id="csspuro">CSS puro</button>
+  
+  <h2>Textarea</h2>
+  <textarea></textarea>
+  
+  <h2>Fieldset</h2>
+  <fieldset>
+    <legend>Leyenda</legend>
+    <label>Label dentro del fieldset</label>
+    <input value="input value en el fieldset">
+  </fieldset>
+  
+  <h2>Deslizador</h2>
+  <input type="range">
+  
+  <h2>Inputs de calendario</h2>
+  <input type="date">
+  <input type="month">
+  <input type="week">
+  <input type="time">
+  
+  <h1>Acciones asociadas a eventos</h1>
+  
+  <h2>Botón 1</h2>
+  <div>
+    <button id="button1">Púlsame</button>
+    <script>
+      let boton = document.querySelector("#button1");
+      boton.onclick = function() {
+        console.log("Me has pulsado");
+      }
+    </script>
+  </div>
+  
+  <h2>Botón 2 - Doble click</h2>
+  <div>
+    <button id="button2">Doble click</button>
+    <script>
+      let boton2 = document.querySelector("#button2");
+      boton2.ondblclick = function() {
+        console.log("Me has pulsado");
+      }
+    </script>
+  </div>
+  
+  <h2>Botón 3 - Click derecho</h2>
+  <div>
+    <button id="button3">Click derecho</button>
+    <script>
+      let boton3 = document.querySelector("#button3");
+      boton3.oncontextmenu = function() {
+        console.log("Me has pulsado");
+      }
+    </script>
+  </div>
+  
+  <h2>Botón 4 - Cursor por encima</h2>
+  <div>
+    <button id="button4">Cursor por encima</button>
+    <script>
+      let boton4 = document.querySelector("#button4");
+      boton4.onmouseenter = function() {
+        console.log("Has entrado");
+      }
+    </script>
+  </div>
+  
+  <h2>Botón 5 - Salida del cursor</h2>
+  <div>
+    <button id="button5">Salida del cursor</button>
+    <script>
+      let boton5 = document.querySelector("#button5");
+      boton5.onmouseout = function() {
+        console.log("Has salido");
+      }
+    </script>
+  </div>
+  
+  <h2>Botón 6 - Movimiento</h2>
+  <div>
+    <button id="button6">Movimiento</button>
+    <script>
+      let boton6 = document.querySelector("#button6");
+      boton6.onmousemove = function() {
+        console.log("Te estás moviendo");
+      }
+    </script>
+  </div>
+  
+  <h2>App de pintura</h2>
+  <div>
+    <style>
+      canvas { border: 1px solid grey; }
+    </style>
+    <button class="herramienta" id="dibujar">Dibujar</button>
+    <button class="herramienta" id="borrar">Borrar</button>
+    <input type="color" id="color">
+    <select id="radio">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
+    </select>
+    <canvas></canvas>
+    <script>
+      var operacion = "dibujar";
+      var radio = 1;
+      var pulsado = false;
+      const lienzo = document.querySelector("canvas");
+      const contexto = lienzo.getContext("2d");
+      
+      lienzo.width = 350;
+      lienzo.height = 350;
+
+      document.onmousedown = function() { pulsado = true; }
+      document.onmouseup = function() { pulsado = false; }
+
+      lienzo.onmousemove = function(e) {
+        if (pulsado) {
+          contexto.fillStyle = document.getElementById("color").value;
+          if (operacion == "dibujar") {
+            contexto.fillRect(e.offsetX, e.offsetY, radio, radio);
+          } else {
+            contexto.clearRect(e.offsetX, e.offsetY, radio, radio);
+          }
+        }
+      }
+
+      document.getElementById("radio").onchange = function() {
+        radio = parseInt(this.value);
+      }
+
+      document.getElementById("dibujar").onclick = function() {
+        operacion = "dibujar";
+      }
+
+      document.getElementById("borrar").onclick = function() {
+        operacion = "borrar";
+      }
+    </script>
+  </div>
+  
+  <h2>Eventos en campos de texto</h2>
+  
+  <h3>Has pulsado una tecla</h3>
+  <div>
+    <input id="apretar">
+    <script>
+      const entrada = document.querySelector("#apretar");
+      entrada.onkeypress = function() {
+        console.log("Has pulsado una tecla");
+      }
+    </script>
+  </div>
+  
+  <h3>Tecla concreta</h3>
+  <div>
+    <input id="escribir">
+    <script>
+      const entrada2 = document.querySelector("#escribir");
+      entrada2.onkeypress = function(e) {
+        console.log("Has pulsado una tecla:", e.key);
+      }
+    </script>
+  </div>
+  
+  <h3>Al presionar la tecla</h3>
+  <div>
+    <input id="keydown">
+    <script>
+      const entrada3 = document.querySelector("#keydown");
+      entrada3.onkeydown = function(e) {
+        console.log("Has pulsado una tecla:", e.key);
+      }
+    </script>
+  </div>
+  
+  <h3>Al soltar la tecla</h3>
+  <div>
+    <input id="keyup">
+    <script>
+      const entrada4 = document.querySelector("#keyup");
+      entrada4.onkeyup = function(e) {
+        console.log("Has soltado una tecla:", e.key);
+      }
+    </script>
+  </div>
+  
+  <h3>On focus (cuando entras al campo)</h3>
+  <div>
+    <input id="onfocus">
+    <script>
+      const entrada5 = document.querySelector("#onfocus");
+      entrada5.onfocus = function() {
+        console.log("Has entrado");
+      }
+    </script>
+  </div>
+  
+  <h3>On blur (cuando sales del campo)</h3>
+  <div>
+    <input id="onblur">
+    <script>
+      const entrada6 = document.querySelector("#onblur");
+      entrada6.onblur = function() {
+        console.log("Has salido");
+      }
+    </script>
+  </div>
+  
+  <h3>Detectar cambios</h3>
+  <div>
+    <input id="cambio">
+    <script>
+      const entrada0 = document.querySelector("#cambio");
+      entrada0.onchange = function() {
+        console.log("Algo ha cambiado");
+      }
+    </script>
+  </div>
+  
+  <h2>Validador de IBAN</h2>
+  <div>
+    <input id="iban">
+    <script>
+      function isLetter(char) {
+        return /^[a-zA-Z]$/.test(char);
+      }
+      const entrada13 = document.querySelector("#iban");
+      entrada13.onchange = function() {
+        let contenido = this.value;
+        if (
+          contenido[4] === " " &&
+          contenido[9] === " " &&
+          contenido[14] === " " &&
+          contenido[19] === " " &&
+          isLetter(contenido[0]) &&
+          isLetter(contenido[1])
+        ) {
+          this.style.background = "rgb(200,255,200)";
+        } else {
+          this.style.background = "rgb(255,200,200)";
+        }
+      }
+    </script>
+  </div>
+  
+</body>
+</html>

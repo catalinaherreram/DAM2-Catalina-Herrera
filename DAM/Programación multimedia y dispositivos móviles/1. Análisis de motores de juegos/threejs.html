@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js</title>
+    <style>
+      /* elimina márgenes predeterminados del cuerpo */
+      body {
+        margin: 0;
+      }
+      /* configura el lienzo para que ocupe toda la pantalla */
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- incluye la biblioteca three.js desde un CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+      // crea una nueva escena de three.js
+      const escena = new THREE.Scene();
+
+      // configura la cámara en perspectiva con un campo de visión de 75 grados
+      const camara = new THREE.PerspectiveCamera(
+        75, 
+        window.innerWidth / window.innerHeight, 
+        0.1, 
+        1000
+      );
+
+      // crea el renderizador WebGL para dibujar la escena en el lienzo
+      const representador = new THREE.WebGLRenderer();
+      representador.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(representador.domElement);
+
+      // crea un cubo de color rojo y lo añade a la escena
+      const geometria = new THREE.BoxGeometry();
+      const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+      const cubo = new THREE.Mesh(geometria, material);
+      escena.add(cubo);
+
+      // crea una esfera de color verde y la añade a la escena
+      const geometriaesfera = new THREE.SphereGeometry(0.5, 32, 16);
+      const materialesfera = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+      const esfera = new THREE.Mesh(geometriaesfera, materialesfera);
+      esfera.position.x = 2; // coloca la esfera en el eje x
+      escena.add(esfera);
+
+      // añade una luz puntual en la escena para iluminar los objetos
+      const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+      pointLight.position.set(0, 5, 0);
+      escena.add(pointLight);
+
+      // añade una luz ambiental suave para dar iluminación general
+      const light = new THREE.AmbientLight(0x404040);
+      escena.add(light);
+
+      // coloca la cámara a una distancia de 5 unidades en el eje z
+      camara.position.z = 5;
+
+      // variables para controlar la posición de la esfera
+      let x = 1, y = 0;
+
+      // función que cambia el color de la esfera a un color aleatorio
+      function cambiarColorAleatorio() {
+        materialesfera.color.setHex(Math.random() * 0xffffff);
+      }
+
+      // cambia la posición de la esfera según las teclas de flecha y cambia el color aleatorio
+      document.onkeydown = function(e){
+        if(e.key == "ArrowUp") { y += 0.1; }
+        if(e.key == "ArrowDown") { y -= 0.1; }
+        if(e.key == "ArrowLeft") { x -= 0.1; }
+        if(e.key == "ArrowRight") { x += 0.1; }
+        cambiarColorAleatorio(); // cambia el color cada vez que se presiona una tecla
+      }
+
+      // función de animación que actualiza los objetos en cada cuadro
+      function animar() {
+        cubo.rotation.x += 0.01; // rota el cubo alrededor del eje x
+        cubo.rotation.y += 0.01; // rota el cubo alrededor del eje y
+
+        // actualiza la posición de la esfera
+        esfera.position.x = x;
+        esfera.position.y = y;
+
+        // solicita el siguiente cuadro de animación y renderiza la escena
+        requestAnimationFrame(animar);
+        representador.render(escena, camara);
+      }
+      animar(); // inicia la animación
+    </script>
+  </body>
+</html>
+

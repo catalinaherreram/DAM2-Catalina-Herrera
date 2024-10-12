@@ -1,0 +1,146 @@
+/* General */
+body, html {
+  font-family: 'Roboto', sans-serif;
+  background: gainsboro;
+  padding: 0;
+  margin: 0;
+  color: antiquewhite;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Encabezado */
+header {
+  padding: 0;
+  background-color: #444;
+  color: antiquewhite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+}
+
+/* Logo */
+#logo {
+  height: 80px;
+  width: auto;
+  margin-left: 15px;
+}
+
+/* Contenedor principal */
+main {
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - 120px);
+  flex-grow: 1;
+  text-align: center;
+}
+
+/* Panel de navegación */
+#panel {
+  width: 200px;
+  background-color: #444;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+}
+
+/* Lista de navegación */
+nav ul {
+  list-style-type: none;
+  padding: 0;
+  padding-top: 40px;
+  margin: 0;
+  width: 100%;
+}
+
+/* Botones de navegación con altura consistente */
+nav ul li {
+  display: flex;
+  justify-content: center; /* Centra el texto en el eje X */
+  align-items: center; /* Centra el texto en el eje Y */
+  padding: 10px; /* Ajuste de padding para coincidir con las filas */
+  height: 50px; /* Ajuste de altura fijo */
+  cursor: pointer;
+  color: antiquewhite;
+  background-color: #444;
+  font-size: 1rem;
+  text-align: center;
+  transition: background-color 0.3s ease;
+  box-sizing: border-box;
+}
+    
+
+nav ul li:hover {
+  background-color: lightslategray;
+}
+
+nav ul li:active {
+  background-color: slategray;
+}
+
+/* Sección de contenido con scroll */
+section {
+  flex-grow: 1;
+  background: #C8C8C8;
+  color: black;
+  padding: 0;
+  overflow-y: scroll;
+  height: 100%;
+}
+
+/* Tabla dentro de la sección */
+section table {
+  width: 100%;
+  border-collapse: collapse; /* Sin bordes dobles */
+}
+
+section table thead {
+  background: gray;
+  color: antiquewhite;
+}
+
+section table thead th {
+  padding: 10px;
+  border-right: 1px solid #bbb; /* Línea divisoria entre columnas */
+}
+
+section table tbody tr {
+  background-color: #C6C6C6;
+  height: 50px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+section table tbody tr:nth-child(even) {
+  background: #C4C4C4;
+}
+
+section table td, section table th {
+  padding: 10px;
+  border-right: 0.3px solid #bbb; /* Línea divisoria entre columnas */
+}
+
+/* Remover la línea divisoria de la última columna */
+section table tbody tr td:last-child,
+section table thead th:last-child {
+  border-right: none;
+}
+
+table tbody tr:hover {
+  background-color: #f0f0f5 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+/* Footer */
+footer {
+  background-color: #333;
+  color: antiquewhite;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

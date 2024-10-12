@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicación de filtros de imagen</title>
+  <style>
+    /* Estilo básico del cuerpo y del contenedor del canvas */
+    body { font-family: Arial, sans-serif; text-align: center; }
+    #contienecanvas { position: relative; display: inline-block; margin-top: 20px; }
+    canvas { border: 1px solid #ccc; }
+
+    /* Estilo para los contenedores de vistas previas de filtros */
+    .filtro-vista-previa {
+      display: inline-block;
+      margin: 5px;
+      cursor: pointer;
+      text-align: center;
+    }
+    
+    /* Estilo para el canvas de cada vista previa */
+    .canvas-vista-previa {
+      border: 1px solid #333;
+      width: 80px;
+      height: 60px;
+      display: block;
+      margin: auto;
+    }
+    
+    /* Contenedor para organizar las vistas previas de filtros en formato de cuadrícula */
+    #contenedorFiltros {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Aplicación de filtros de imagen</h2>
+  
+  <!-- Input para cargar una imagen -->
+  <input type="file" id="subirImagen" accept="image/*">
+  
+  <!-- Selector para elegir el tamaño del bloque de procesamiento del filtro -->
+  <select id="tamaño">
+    <option value="4">4</option>
+    <option value="8">8</option>
+    <option value="16">16</option>
+    <option value="32">32</option>
+    <option value="64">64</option>
+    <option value="128">128</option>
+    <option value="256">256</option>
+  </select>
+  
+  <!-- Contenedor donde se generan y muestran las vistas previas de filtros -->
+  <div id="contenedorFiltros"></div>
+  
+  <!-- Botón para descargar la imagen procesada (deshabilitado al inicio) -->
+  <button id="botonDescargar" disabled>Descargar Imagen</button>
+  
+  <!-- Contenedor que incluye los dos canvas principales para el procesamiento de la imagen -->
+  <div id="contienecanvas">
+    <canvas id="lienzo1"></canvas>
+    <canvas id="lienzo2"></canvas>
+  </div>
+
+  <script>
+    // Variables de control para la posición de procesamiento y filtro seleccionado
+    let x = 0, y = 0, tamañoBloque, filtroSeleccionado;
+
+    // Referencias a los canvas y sus contextos
+    const lienzo = document.querySelector("#lienzo1");
+    const contexto = lienzo.getContext("2d");
+    const lienzo2 = document.querySelector("#lienzo2");
+    const contexto2 = lienzo2.getContext("2d");
+
+    // Contenedor de filtros y botón de descarga
+    const contenedorFiltros = document.getElementById("contenedorFiltros");
+    const botonDescargar = document.getElementById("botonDescargar");
+
+    // Lista de filtros disponibles
+    const filtros = ["Grises", "Negativo", "Umbral", "Rojos", "Verdes", "Azules", "Sepia"];
+
+    // Asignación de eventos para la carga de la imagen y la descarga de la imagen procesada
+    document.getElementById("subirImagen").addEventListener("change", manejarCargaImagen);
+    botonDescargar.addEventListener("click", descargarImagen);
+
+    // Crear un objeto de imagen que usaremos para mostrar la imagen cargada
+    let imagen = new Image();
+
+    // Función para manejar la carga de una nueva imagen
+    function manejarCargaImagen(evento) {
+      const archivo = evento.target.files[0];
+      if (archivo) {
+        const lector = new FileReader();
+        lector.onload = function (e) {
+          imagen.src = e.target.result;
+          imagen.onload = function () {
+            // Ajusta el tamaño de los canvas al tamaño de la imagen cargada
+            lienzo.width = lienzo2.width = imagen.width;
+            lienzo.height = lienzo2.height = imagen.height;
+
+            // Dibuja la imagen en el primer canvas
+            contexto.drawImage(imagen, 0, 0);
+            
+            // Llama a la función para generar vistas previas de cada filtro
+            generarVistasPrevias();
+          };
+        };
+        lector.readAsDataURL(archivo);
+      }
+    }
+
+    // Función para generar vistas previas de los filtros aplicados a la imagen
+    function generarVistasPrevias() {
+      contenedorFiltros.innerHTML = ""; // Limpia las vistas previas existentes
+      filtros.forEach(filtro => {
+        const canvasVistaPrevia = document.createElement("canvas");
+        canvasVistaPrevia.width = 80;
+        canvasVistaPrevia.height = 60;
+        canvasVistaPrevia.classList.add("canvas-vista-previa");
+        
+        const contextoVistaPrevia = canvasVistaPrevia.getContext("2d");
+
+        // Dibuja la imagen en miniatura para aplicar el filtro de vista previa
+        contextoVistaPrevia.drawImage(imagen, 0, 0, canvasVistaPrevia.width, canvasVistaPrevia.height);
+        
+        // Obtiene los datos de imagen de la miniatura
+        const datosImagen = contextoVistaPrevia.getImageData(0, 0, canvasVistaPrevia.width, canvasVistaPrevia.height);
+        
+        // Crear un trabajador web para aplicar el filtro de vista previa sin bloquear la interfaz
+        const trabajador = new Worker("workeraplicacion.js");
+        trabajador.postMessage({ data: datosImagen, filtro: filtro });
+        
+        // Cuando el trabajador completa el filtro, coloca los datos procesados en el canvas de vista previa
+        trabajador.onmessage = function (evento) {
+          contextoVistaPrevia.putImageData(evento.data.imgData, 0, 0);
+          trabajador.terminate();
+        };
+        
+        // Crear un contenedor visual para cada filtro y agregar un evento para aplicarlo
+        const divFiltro = document.createElement("div");
+        divFiltro.classList.add("filtro-vista-previa");
+        divFiltro.onclick = () => aplicarFiltro(filtro);
+        divFiltro.appendChild(canvasVistaPrevia);
+        
+        // Agregar el nombre del filtro debajo de la vista previa
+        const nombreFiltro = document.createElement("span");
+        nombreFiltro.innerText = filtro.charAt(0).toUpperCase() + filtro.slice(1);
+        divFiltro.appendChild(nombreFiltro);
+        
+        // Agregar el contenedor de filtro al contenedor principal de filtros
+        contenedorFiltros.appendChild(divFiltro);
+      });
+    }
+
+    // Función para aplicar el filtro seleccionado a la imagen completa
+    function aplicarFiltro(tipoFiltro) {
+      filtroSeleccionado = tipoFiltro;
+      tamañoBloque = parseInt(document.getElementById("tamaño").value); // Tamaño del bloque de procesamiento
+      x = y = 0; // Resetea posición de inicio del procesamiento
+      procesarImagen(); // Inicia el procesamiento en bloques
+    }
+
+    // Función de procesamiento de la imagen en bloques pequeños usando trabajadores web
+    function procesarImagen() {
+      if (y >= lienzo.height) { // Si la imagen completa ha sido procesada, habilita el botón de descarga
+        botonDescargar.disabled = false;
+        return;
+      }
+
+      // Obtener datos de la imagen en el bloque actual
+      const datosBloque = contexto.getImageData(x, y, tamañoBloque, tamañoBloque);
+
+      // Crear un trabajador web para procesar el bloque actual
+      const trabajador = new Worker("workeraplicacion.js");
+      trabajador.postMessage({ data: datosBloque, filtro: filtroSeleccionado });
+
+      // Al recibir datos del trabajador, dibuja el bloque procesado en el segundo canvas
+      trabajador.onmessage = function (evento) {
+      const { imgData, pixelesModificados } = evento.data;
+      contexto2.putImageData(imgData, x, y);
+
+      // Muestra en consola la cantidad de píxeles modificados en este bloque
+      console.log(`Píxeles modificados en este bloque: ${pixelesModificados}`);
+
+      x += tamañoBloque;
+      if (x >= lienzo.width) { 
+        x = 0;
+        y += tamañoBloque;
+      }
+
+      trabajador.terminate();
+      setTimeout(procesarImagen, 10); // Procesa el siguiente bloque después de un breve retraso
+      }
+      };
+
+
+    // Función para descargar la imagen procesada
+    function descargarImagen() {
+      const enlace = document.createElement("a");
+      enlace.href = lienzo2.toDataURL("image/png"); // Convierte el contenido del canvas en una URL
+      enlace.download = "imagen_procesada.png"; // Define el nombre del archivo
+      enlace.click(); // Dispara la descarga automáticamente
+    }
+  </script>
+</body>
+</html>
