@@ -1,0 +1,37 @@
+[
+    {
+        "nombre": "clientes",
+        "columnas": [
+            {
+                "nombre": "nombre",
+                "tipo": "VARCHAR",
+                "longitud": "255"
+            },
+            {
+                "nombre": "apellidos",
+                "tipo": "VARCHAR",
+                "longitud": "255"
+            }
+        ]
+    },
+    {
+        "nombre": "empleados",
+        "columnas": [
+            {
+                "nombre": "nombre",
+                "tipo": "VARCHAR",
+                "longitud": "255"
+            },
+            {
+                "nombre": "apellidos",
+                "tipo": "VARCHAR",
+                "longitud": "255"
+            },
+            {
+                "nombre": "email",
+                "tipo": "VARCHAR",
+                "longitud": "255"
+            }
+        ]
+    }
+]
