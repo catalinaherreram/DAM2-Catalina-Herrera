@@ -1,0 +1,11 @@
+{
+    "idproducto": "1",
+    "nombre": "Lampara",
+    "precio": "10",
+    "categoria": "Iluminacion",
+    "dimensiones": {
+        "x": 20,
+        "y": 10,
+        "z": 30
+    }
+}
