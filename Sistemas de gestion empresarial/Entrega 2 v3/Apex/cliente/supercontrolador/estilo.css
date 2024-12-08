@@ -1,0 +1,281 @@
+    /* General */
+    body, html {
+      font-family: 'Roboto', sans-serif;
+      background: gainsboro;
+      padding: 0;
+      margin: 0;
+      color: antiquewhite;
+      height: 100%;
+      display: flex;
+        overflow: hidden;
+      flex-direction: column;
+    }
+
+    /* Encabezado */
+    header {
+      padding: 0;
+      background-color: #444;
+      color: antiquewhite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80px;
+    }
+
+    /* Logo */
+    #logo {
+      height: 80px;
+      width: auto;
+      margin-left: 15px;
+    }
+
+    /* Contenedor principal */
+    main {
+      display: flex;
+      flex-direction: row;
+      height: calc(100vh - 120px);
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    /* Panel de navegación */
+    #panel {
+      width: 200px;
+      background-color: #444;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      height: 100%;
+    }
+
+    /* Lista de navegación */
+    nav ul {
+      list-style-type: none;
+      padding: 0;
+      padding-top: 40px;
+      margin: 0;
+      width: 100%;
+    }
+
+    /* Botones de navegación con altura consistente */
+    nav ul li {
+      display: flex;
+      justify-content: center; /* Centra el texto en el eje X */
+      align-items: center; /* Centra el texto en el eje Y */
+      padding: 10px; /* Ajuste de padding para coincidir con las filas */
+      height: 50px; /* Ajuste de altura fijo */
+      cursor: pointer;
+      color: antiquewhite;
+      background-color: #444;
+      font-size: 1rem;
+      text-align: center;
+      transition: background-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+
+    nav ul li:hover {
+      background-color: lightslategray;
+    }
+
+    nav ul li:active {
+      background-color: slategray;
+    }
+
+    /* Sección de contenido con scroll */
+    section {
+      flex-grow: 1;
+      background: #C8C8C8;
+      color: black;
+      padding: 0;
+      overflow-y: scroll;
+      height: 100%;
+    }
+
+    /* Tabla dentro de la sección */
+    section table {
+      width: 100%;
+      border-collapse: collapse; /* Sin bordes dobles */
+    }
+
+    section table thead {
+      background: gray;
+      color: antiquewhite;
+    }
+
+    section table thead th {
+      padding: 10px;
+      border-right: 1px solid #bbb; /* Línea divisoria entre columnas */
+    }
+
+    section table tbody tr {
+      background-color: #C6C6C6;
+      height: 50px;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    section table tbody tr:nth-child(even) {
+      background: #C4C4C4;
+    }
+
+    section table td, section table th {
+      padding: 10px;
+      border-right: 0.3px solid #bbb; /* Línea divisoria entre columnas */
+    }
+
+    /* Remover la línea divisoria de la última columna */
+    section table tbody tr td:last-child,
+    section table thead th:last-child {
+      border-right: none;
+    }
+
+    table tbody tr:hover {
+      background-color: #f0f0f5 !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+    }
+    /* Footer */
+    footer {
+      background-color: #333;
+      color: antiquewhite;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Modal */
+    #modal {
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        backdrop-filter: blur(5px);
+        color: black;
+    }
+
+    #contienemodal{
+        color: black;
+        text-align: center;
+        width: 700px;
+        height: 700px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        background: white;
+        margin-left: -300px;
+        margin-top: -350px;
+        border-radius: 10px;
+        box-sizing: border-box;
+        padding: 40px;
+        box-shadow: 0px 5px 10px gray;
+    }
+
+#contienemodal section{
+    width: 100%;
+    height: 80%;
+    background-color: white;
+    column-count: 2;
+    column-gap: 60px;
+    text-align: left;
+    overflow: hidden;
+}
+
+#contienemodal div{
+    break-inside: avoid-column;
+}
+
+    #insertar {
+        width: 30px;
+        height: 30px;
+        background: gray;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        margin-bottom: 10px;
+        font-size: 30px;
+        text-align: center;
+        line-height: 30px;
+        font-weight: bold;
+    }
+
+#contienemodal input{
+    width: 100%;
+    padding: 10px 0px;
+    margin: 10px 0px;
+    border: 0px;
+    border-bottom: 1px solid grey;
+}
+
+#contienemodal input:focus{
+    outline: none;
+    background: rgb(240,240,240);
+}
+
+#contienemodal p{
+    color: black;
+    padding-top: 30px;
+    margin: 0px;
+    font-size: 15px;
+}
+
+#contienemodal h1{
+    color: gray;
+}
+
+#contienemodal button{
+    background: gray;
+    color: white;
+    width: 50%;
+    padding: 10px;
+    border-radius: 50px;
+    border: none;
+    margin-top: 20px;
+}
+
+.aparece{
+    animation:animaaparece 0.5s;
+    animation-fill-mode:forwards;
+}
+
+@keyframes animaaparece{
+    0%{opacity: 0%;}
+    100%{opacity: 100%;}
+}
+
+.desaparece{
+    animation: animadesaparece 0.5s;
+    animation-fill-mode: forwards;
+}
+
+@keyframes animadesaparece{
+    0%{opacity: 100%;}
+    100%{opacity: 0%;}
+}
+
+.titulotabla{
+    display: inline-block;
+    padding-left: 10px;
+}
+
+.titulotabla *{
+    margin: 0px;
+    
+}
+
+.titulotabla h5{
+    font-size: 24px;
+}
+
+.titulotabla p{
+    font-size: 16px;
+}
+
+.menuseleccionado {
+    background: white;
+    color: gray;
+}
