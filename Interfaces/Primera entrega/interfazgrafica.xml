@@ -1,0 +1,16 @@
+<interfaz>
+    <texto>Componentes de la librería Tkinter</texto>
+    <boton>Esto es un botón</boton>
+    <texto>Esto es un texto, y lo de abajo un input</texto>
+    <entrada/>
+    <texto>Escribe tu nombre en el campo de abajo</texto>
+    <entrada/>
+    <boton>Presiona si has entendido</boton>
+    <texto_selecciona_opciones>Selecciona tus opciones:</texto_selecciona_opciones>
+    <opcion_check1>Opción 1</opcion_check1>
+    <opcion_check2>Opción 2</opcion_check2>
+    <texto_selecciona_radio>Selecciona una opción:</texto_selecciona_radio>
+    <radio_opcion_a>Opción A</radio_opcion_a>
+    <radio_opcion_b>Opción B</radio_opcion_b>
+    <texto_desliza>Desliza</texto_desliza>
+</interfaz>
