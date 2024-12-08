@@ -1,0 +1,14 @@
+DELIMITER //
+
+CREATE PROCEDURE SeleccionaClientes (IN cadena VARCHAR(50))
+BEGIN
+	SELECT
+    	CONCAT(nombre,' ',apellidos) AS nombrecompleto,
+        email,
+        direccion,
+        poblacion
+	FROM clientes
+    WHERE nombre LIKE CONCAT('%', cadena, '%');
+END //
+
+DELIMITER ;
