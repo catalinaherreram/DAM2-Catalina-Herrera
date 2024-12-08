@@ -1,0 +1,363 @@
+<!doctype html>
+<html>
+<head>
+  <title>Happybara</title>
+  <style>
+    /* oculta el desbordamiento horizontal de la página */
+    body {
+      overflow-x: hidden;
+    }
+
+    /* estilo del lienzo: bordes grises y posición absoluta en la esquina superior izquierda */
+    canvas {
+      border: 1px solid grey;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+    }
+  </style>
+</head>
+<body>
+  <!-- varios lienzos para diferentes capas de dibujo en el juego -->
+  <canvas id="lienzofondo"></canvas>       <!-- fondo general del juego -->
+  <canvas id="lienzo1"></canvas>           <!-- capa para jugador y NPCs -->
+  <canvas id="lienzo2"></canvas>           <!-- capa para otros elementos dinámicos como balas -->
+  <canvas id="lienzocaminos"></canvas>     <!-- capa invisible que guía el camino permitido -->
+
+  <script>
+    // configuración inicial de variables de tamaño y límites
+    const anchoVisible = 512; // ancho del área visible del juego en el lienzo
+    const altoVisible = 425; // alto del área visible del juego
+    const umbralColisionBala = 10; // distancia mínima para colisión de una bala con un NPC
+    const maxNpcs = 50; // máximo de NPCs permitidos en el juego al mismo tiempo
+
+    // selecciona el lienzo de caminos y configura su contexto
+    const lienzocaminos = document.querySelector("#lienzocaminos");
+    const contextocaminos = lienzocaminos.getContext("2d");
+    lienzocaminos.width = 1600; // ancho total del mapa en el lienzo de caminos
+    lienzocaminos.height = 425; // altura total del mapa en el lienzo de caminos
+    lienzocaminos.style.opacity = 0; // invisibiliza el lienzo de caminos para no ser visto
+
+    // configuración del lienzo principal donde se dibujarán el jugador y los NPCs
+    const lienzo = document.querySelector("#lienzo1");
+    const contexto = lienzo.getContext("2d");
+    lienzo.width = anchoVisible;
+    lienzo.height = altoVisible;
+
+    // configuración del segundo lienzo para elementos como balas
+    const lienzo2 = document.querySelector("#lienzo2");
+    const contexto2 = lienzo2.getContext("2d");
+    lienzo2.width = anchoVisible;
+    lienzo2.height = altoVisible;
+
+    // configuración del lienzo de fondo
+    const lienzofondo = document.querySelector("#lienzofondo");
+    const contextofondo = lienzofondo.getContext("2d");
+    lienzofondo.width = anchoVisible;
+    lienzofondo.height = altoVisible;
+
+    // variables para controlar la posición y elementos del juego
+    let listaposibles = []; // lista de posiciones permitidas para NPCs
+    var desfase_global_x = 0; // variable de desplazamiento horizontal del mapa visible
+
+    // carga de imágenes utilizadas en el juego
+    const imagencaminos = new Image();
+    imagencaminos.src = "./img/recorridov3.png"; // imagen del camino en el lienzo invisible de caminos
+
+    const imagenfondo = new Image();
+    imagenfondo.src = "./img/fondo.jpg"; // imagen de fondo del escenario
+
+    const capy = new Image();
+    capy.src = "./img/capy.png"; // sprite del personaje principal (jugador)
+
+    const imagenauto = new Image();
+    imagenauto.src = "./img/auto.png"; // sprite del auto (NPC)
+
+    // clase Jugador: representa al personaje principal del jugador
+    class Jugador {
+      constructor() {
+        this.x = 15; // posición inicial en el eje x
+        this.y = 225; // posición inicial en el eje y
+        this.direccion = "derecha"; // dirección inicial de movimiento
+        this.velocidad = 6; // velocidad de desplazamiento
+      }
+
+      // dibuja al personaje en el lienzo principal, rotado según la dirección
+      dibuja() {
+        const anchoCapy = 50; // ancho del sprite del jugador
+        const altoCapy = 30; // alto del sprite del jugador
+        const escalaCapy = 0.5; // escala de reducción del sprite del jugador
+
+        // guarda el estado actual del contexto para rotar el sprite sin afectar otras partes
+        contexto.save();
+        // desplaza el contexto a la posición actual del jugador en el eje x e y
+        contexto.translate(this.x - desfase_global_x, this.y);
+        
+        // rota el sprite en base a la dirección del jugador
+        switch (this.direccion) {
+          case "izquierda":
+            contexto.rotate(Math.PI); // rotación hacia la izquierda
+            break;
+          case "derecha":
+            contexto.rotate(0); // sin rotación para dirección derecha
+            break;
+          case "arriba":
+            contexto.rotate(-Math.PI / 2); // rotación hacia arriba
+            break;
+          case "abajo":
+            contexto.rotate(Math.PI / 2); // rotación hacia abajo
+            break;
+        }
+
+        // dibuja el sprite en su posición actual y escala
+        contexto.drawImage(
+          capy,
+          -anchoCapy * escalaCapy / 2,
+          -altoCapy * escalaCapy / 2,
+          anchoCapy * escalaCapy,
+          altoCapy * escalaCapy
+        );
+
+        // restaura el contexto a su estado original
+        contexto.restore();
+      }
+
+      // mueve al personaje en la dirección deseada si el camino está libre de obstáculos
+      mueve(direccion) {
+        let futuroX = this.x; // almacena la posición futura en x
+        let futuroY = this.y; // almacena la posición futura en y
+
+        // ajusta la posición futura en base a la dirección seleccionada
+        if (direccion === "izquierda") futuroX -= this.velocidad;
+        if (direccion === "derecha") futuroX += this.velocidad;
+        if (direccion === "arriba") futuroY -= this.velocidad;
+        if (direccion === "abajo") futuroY += this.velocidad;
+
+        // detecta el color del próximo píxel para verificar si el movimiento es permitido
+        let color = contextocaminos.getImageData(futuroX, futuroY, 1, 1).data;
+        if (color[0] === 255 && color[1] === 0 && color[2] === 0) { // verifica si es rojo (camino permitido)
+          this.x = futuroX; // actualiza la posición en x
+          this.y = futuroY; // actualiza la posición en y
+          this.direccion = direccion; // actualiza la dirección
+        }
+      }
+    }
+
+    // clase Npc: representa los autos enemigos en el juego
+    class Npc {
+      constructor() {
+        let intentos = 0; // contador de intentos para encontrar una posición válida
+        let maxIntentos = 100; // número máximo de intentos antes de salir
+        let valido = false; // bandera para verificar si se encontró una posición válida
+
+        // intenta generar una posición aleatoria dentro del camino hasta encontrar una válida o agotarse los intentos
+        while (!valido && intentos < maxIntentos) {
+          this.x = Math.floor(Math.random() * (1460 - 45) + 45); // genera posición x entre 45 y 1460
+          this.y = Math.floor(Math.random() * altoVisible); // genera posición y dentro de altoVisible
+
+          let color = contextocaminos.getImageData(this.x, this.y, 1, 1).data;
+          if (color[0] === 255 && color[1] === 0 && color[2] === 0 && this.x <= 1460) { // verifica si es camino
+            valido = true; // posición válida encontrada
+          }
+          intentos++; // incrementa intentos si la posición no es válida
+        }
+
+        // asigna una dirección inicial aleatoria al NPC
+        this.direccion = ['n', 's', 'e', 'o'][Math.floor(Math.random() * 4)];
+      }
+
+      // mueve el npc en su dirección actual, cambia de dirección si encuentra un obstáculo
+      mueve() {
+        let futuroX = this.x; // almacena la posición futura en x
+        let futuroY = this.y; // almacena la posición futura en y
+
+        // ajusta la posición futura en base a la dirección actual del NPC
+        if (this.direccion === "n") futuroY -= 1;
+        if (this.direccion === "s") futuroY += 1;
+        if (this.direccion === "o") futuroX -= 1;
+        if (this.direccion === "e") futuroX += 1;
+
+        // verifica si el próximo píxel es camino
+        if (futuroX <= 1460) {
+          let color = contextocaminos.getImageData(futuroX, futuroY, 1, 1).data;
+          if (color[0] === 255 && color[1] === 0 && color[2] === 0) {
+            this.x = futuroX; // actualiza la posición en x
+            this.y = futuroY; // actualiza la posición en y
+          } else {
+            this.direccion = ['n', 's', 'e', 'o'][Math.floor(Math.random() * 4)]; // cambia dirección aleatoria
+          }
+        } else {
+          this.direccion = ['n', 's', 'o'][Math.floor(Math.random() * 3)]; // evita ir a la derecha fuera de límites
+        }
+      }
+
+      // dibuja el npc en el lienzo principal, rotado según su dirección
+      dibuja() {
+        const anchoAuto = 40; // ancho del sprite del auto
+        const altoAuto = 25;  // alto del sprite del auto
+        const escalaAuto = 0.5; // escala de reducción del sprite del auto
+
+        // guarda el estado actual del contexto para rotar el sprite sin afectar otras partes
+        contexto.save();
+        // desplaza el contexto a la posición actual del npc en el eje x e y
+        contexto.translate(this.x - desfase_global_x, this.y);
+
+        // rota el sprite en base a la dirección del NPC
+        switch (this.direccion) {
+          case "n":
+            contexto.rotate(-Math.PI / 2); // rotación hacia arriba
+            break;
+          case "s":
+            contexto.rotate(Math.PI / 2); // rotación hacia abajo
+            break;
+          case "o":
+            contexto.rotate(Math.PI); // rotación hacia la izquierda
+            break;
+          case "e":
+            contexto.rotate(0); // sin rotación para dirección derecha
+            break;
+        }
+
+        // dibuja el sprite en su posición actual y escala
+        contexto.drawImage(
+          imagenauto,
+          -anchoAuto * escalaAuto / 2,
+          -altoAuto * escalaAuto / 2,
+          anchoAuto * escalaAuto,
+          altoAuto * escalaAuto
+        );
+
+        // restaura el contexto a su estado original
+        contexto.restore();
+      }
+    }
+
+    // clase Bala: representa las balas disparadas por el jugador
+    class Bala {
+      constructor() {
+        this.x = jugador.x; // posición inicial en x igual a la posición del jugador
+        this.y = jugador.y; // posición inicial en y igual a la posición del jugador
+        this.vx = 10; // velocidad de desplazamiento en x
+        this.vy = 10; // velocidad de desplazamiento en y
+        this.direccion = jugador.direccion; // dirección de disparo según la dirección del jugador
+      }
+
+      // mueve la bala en la dirección de disparo
+      mueve() {
+        if (this.direccion === "izquierda") this.x -= this.vx;
+        if (this.direccion === "derecha") this.x += this.vx;
+        if (this.direccion === "arriba") this.y -= this.vy;
+        if (this.direccion === "abajo") this.y += this.vy;
+      }
+
+      // dibuja la bala en el lienzo principal
+      dibuja() {
+        contexto.beginPath();
+        contexto.arc(this.x - desfase_global_x, this.y, 6, 0, Math.PI * 2); // dibuja círculo
+        contexto.fill(); // llena el círculo
+      }
+    }
+
+    const jugador = new Jugador(); // instancia de la clase jugador
+    const misnpcs = []; // array para almacenar NPCs
+    const balas = []; // array para almacenar balas
+
+    // controla el movimiento del jugador y el disparo de balas con teclas
+    document.onkeydown = function(e) {
+      let direccion;
+      if (e.key === "ArrowUp") direccion = "arriba";
+      if (e.key === "ArrowDown") direccion = "abajo";
+      if (e.key === "ArrowLeft") direccion = "izquierda";
+      if (e.key === "ArrowRight") direccion = "derecha";
+
+      if (direccion) jugador.mueve(direccion); // mueve el jugador en la dirección dada
+      if (e.keyCode === 32) balas.push(new Bala()); // tecla espacio para disparar una bala
+    };
+
+    // verifica si el jugador ha alcanzado la meta y reinicia el juego
+    function verificarVictoria() {
+      if (jugador.x >= 1475) { // si el jugador supera el límite en x, gana
+        alert("Has llegado a la meta. Has ganado.");
+        window.location.reload(); // recarga la página para reiniciar el juego
+      }
+    }
+
+    // detecta colisiones entre balas y NPCs, y entre el jugador y los NPCs
+    function detectarColisiones() {
+      const umbralColisionCerca = 15;
+
+      // colisión de balas con NPCs
+      for (let i = balas.length - 1; i >= 0; i--) {
+        for (let j = misnpcs.length - 1; j >= 0; j--) {
+          let distancia = Math.sqrt(Math.pow(balas[i].x - misnpcs[j].x, 2) + Math.pow(balas[i].y - misnpcs[j].y, 2));
+          if (distancia < umbralColisionBala) {
+            balas.splice(i, 1); // elimina la bala en colisión
+            misnpcs.splice(j, 1); // elimina el npc en colisión
+            break;
+          }
+        }
+      }
+
+      // colisión entre el jugador y NPCs
+      for (let i = 0; i < misnpcs.length; i++) {
+        const npc = misnpcs[i];
+        const distancia = Math.sqrt(Math.pow(jugador.x - npc.x, 2) + Math.pow(jugador.y - npc.y, 2));
+
+        if (distancia < umbralColisionCerca) {
+          alert("Has sido alcanzado por un auto. Has perdido.");
+          window.location.reload();
+          return;
+        }
+      }
+    }
+
+    // bucle principal del juego: mueve y dibuja elementos, detecta colisiones y verifica victoria
+    function bucle() {
+      contextofondo.drawImage(imagenfondo, 0 - desfase_global_x, 0); // dibuja el fondo
+      if (jugador.x - desfase_global_x > 300) desfase_global_x += 5; // ajusta desfase global en base a jugador
+
+      contexto.clearRect(0, 0, anchoVisible, altoVisible);
+      contexto2.clearRect(0, 0, anchoVisible, altoVisible);
+
+      misnpcs.forEach(npc => {
+        npc.mueve(); // mueve npc
+        npc.dibuja(); // dibuja npc
+      });
+
+      balas.forEach(bala => {
+        bala.mueve(); // mueve bala
+        bala.dibuja(); // dibuja bala
+      });
+
+      detectarColisiones(); // detecta colisiones en cada ciclo
+      verificarVictoria(); // verifica si el jugador ha alcanzado la meta
+
+      if (misnpcs.length < maxNpcs) {
+        misnpcs.push(new Npc()); // añade NPC si el número es menor al máximo permitido
+      }
+
+      jugador.dibuja(); // dibuja al jugador
+      setTimeout(bucle, 30); // pausa el bucle para suavizar el movimiento
+    }
+
+    // carga el camino al comenzar, agrega NPCs iniciales y lanza el bucle de juego
+    imagencaminos.onload = function() {
+      contextocaminos.drawImage(imagencaminos, 0, 0);
+      const pixelesposibles = contextocaminos.getImageData(0, 0, anchoVisible, altoVisible);
+      for (let i = 0; i < pixelesposibles.data.length; i += 4) {
+        if (pixelesposibles.data[i] === 255) { // verifica si el color es rojo
+          let x = (i / 4) % anchoVisible;
+          let y = Math.floor((i / 4) / anchoVisible);
+          listaposibles.push({ "x": x, "y": y }); // guarda las posiciones válidas en el array
+        }
+      }
+
+      for (let i = 0; i < maxNpcs; i++) {
+        misnpcs.push(new Npc()); // añade NPCs al comienzo del juego
+      }
+
+      setTimeout(bucle, 1000); // lanza el bucle del juego después de un segundo
+    };
+  </script>
+</body>
+</html>
