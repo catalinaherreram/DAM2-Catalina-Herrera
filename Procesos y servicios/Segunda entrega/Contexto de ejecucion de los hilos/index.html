@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Tareas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #555;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Asignación de Tareas</h1>
+        <p>Ingresa tu usuario:</p>
+        <input type="text" id="usuario" placeholder="Escribe tu nombre de usuario">
+        <button id="enviar">Enviar</button>
+        <div class="output" id="resultado"></div>
+    </div>
+
+    <script>
+        // Selección de elementos del DOM
+        const inputUsuario = document.getElementById('usuario');
+        const botonEnviar = document.getElementById('enviar');
+        const divResultado = document.getElementById('resultado');
+
+        // Evento de clic en el botón
+        botonEnviar.addEventListener('click', () => {
+            const usuario = inputUsuario.value.trim();
+
+            if (usuario === '') {
+                divResultado.textContent = 'Por favor, ingresa un usuario.';
+                return;
+            }
+
+            divResultado.textContent = 'Procesando...';
+
+            // Primera solicitud: distribuidordeasignaciones.php
+            fetch(`distribuidordeasignaciones.php?usuario=${encodeURIComponent(usuario)}`)
+                .then(response => response.text())
+                .then(datos => {
+                    try {
+                        const conjunto = JSON.parse(datos);
+                        console.log('Datos recibidos:', conjunto);
+
+                        let suma = conjunto.reduce((acum, num) => acum + num, 0);
+
+                        // Segunda solicitud: resultado.php
+                        return fetch(`resultado.php?resultado=${suma}`);
+                    } catch (error) {
+                        throw new Error('Error al procesar los datos del servidor.');
+                    }
+                })
+                .then(() => {
+                    divResultado.textContent = 'Operación completada exitosamente.';
+                })
+                .catch(error => {
+                    console.error(error);
+                    divResultado.textContent = 'Hubo un error en el proceso. Por favor, intenta nuevamente.';
+                });
+        });
+    </script>
+</body>
+</html>
