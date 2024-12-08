@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <script>
+      window.onload = function () {
+        // Crear la conexión al WebSocket
+        const socket = new WebSocket("wss://codecath.eu:3000");
+
+        // Evento: conexión abierta
+        socket.addEventListener("open", (event) => {
+          console.log("WebSocket connection opened");
+        });
+
+        // Evento: error
+        socket.addEventListener("error", (event) => {
+          console.error("WebSocket error:", event);
+        });
+
+        // Evento: conexión cerrada
+        socket.addEventListener("close", (event) => {
+          console.log("WebSocket connection closed");
+        });
+
+        // Evento: mensaje recibido
+        socket.addEventListener("message", (event) => {
+          try {
+            const datos = JSON.parse(event.data);
+            console.log("Mensaje recibido:", datos);
+          } catch (error) {
+            console.error("Error parsing message:", error);
+          }
+        });
+
+        // Envía un mensaje solo si el WebSocket está abierto
+        socket.addEventListener("open", () => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ mensaje: "Hola desde el cliente" }));
+          }
+        });
+
+        // Verificar el estado antes de enviar mensajes
+        setTimeout(() => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ mensaje: "Otro mensaje" }));
+          } else {
+            console.log("WebSocket no está abierto, no se envió el mensaje.");
+          }
+        }, 2000);
+      };
+    </script>
+  </head>
+  <body>
+    <h1>Cliente WebSocket</h1>
+  </body>
+</html>
