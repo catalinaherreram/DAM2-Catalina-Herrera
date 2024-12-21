@@ -1,0 +1,28 @@
+ID: 1
+Nombre: Peluca
+Descripción: Peluca de color rojo
+Precio: 40
+Categorías: peluqueria, moda
+
+------------------------------
+ID: 2
+Nombre: Dron
+Descripción: Dron marca Porsche
+Precio: 900
+Categorías: ocio, jugueteria
+
+------------------------------
+ID: 3
+Nombre: Sofá
+Descripción: Sofá cama desplegable
+Precio: 450
+Categorías: muebles, hogar
+
+------------------------------
+ID: 4
+Nombre: Reloj
+Descripción: Reloj inteligente
+Precio: 50
+Categorías: moda, deportes
+
+------------------------------
