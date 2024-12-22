@@ -1,0 +1,61 @@
+@font-face {
+  font-family: personalizada;
+  src: url(personalizada.ttf);
+}
+* {
+  transition: all 0.5s ease;
+}
+.ampliador {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+}
+.ampliador > button {
+  border: none;
+  margin: 0;
+  padding: 5px; 
+  background: darkgray; 
+  color: white; 
+  width: 40px;
+  height: 40px;
+  font-weight: bold;
+  line-height: 16px;
+  border-radius: 8px; 
+  transition: all 0.5s ease;
+}
+
+.ampliador > button:hover {
+    background: lightgray; 
+    filter: invert(1) brightness(2);
+}
+
+.ampliador > button img {
+  filter: invert(1) brightness(2);
+}
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: gray;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.opciones button {
+  border: none;
+  margin: 0;
+  padding: 5px;
+  background: darkgray;
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 16px;
+}
+.opciones button:hover {
+  background: lightgray;
+    filter: invert(1) brightness(2);
+}
