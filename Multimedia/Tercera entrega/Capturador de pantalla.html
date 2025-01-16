@@ -1,0 +1,124 @@
+<script>
+    // Variables globales para manejar el flujo de captura y los elementos canvas
+    let stream, video, canvasOriginal, canvasProcesado, contextoOriginal, contextoProcesado, estado, cuadroAnimacion;
+
+    // Función para iniciar la captura de pantalla
+    async function iniciarCaptura() {
+        try {
+            // Actualiza el estado en la UI para indicar que se está iniciando
+            document.getElementById('estado').textContent = 'Iniciando captura...';
+            
+            // Solicita acceso a la pantalla para capturarla
+            stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+
+            // Crea un elemento de video para manejar el stream capturado
+            video = document.createElement('video');
+            video.srcObject = stream; // Asocia el stream de captura al video
+
+            // Espera a que el video cargue los metadatos para configurarlo
+            video.onloadedmetadata = function () {
+                video.play(); // Reproduce el video
+                
+                canvasOriginal = document.getElementById('canvasOriginal');
+                canvasProcesado = document.getElementById('canvasProcesado');
+                contextoOriginal = canvasOriginal.getContext('2d'); // Contexto para dibujar en el canvas original
+                contextoProcesado = canvasProcesado.getContext('2d'); // Contexto para el canvas procesado
+
+                // Establece las dimensiones de ambos canvas
+                canvasOriginal.width = 320;
+                canvasOriginal.height = 180;
+                canvasProcesado.width = 320;
+                canvasProcesado.height = 180;
+
+                // Dibuja el primer cuadro del video en el canvas original
+                contextoOriginal.drawImage(video, 0, 0, canvasOriginal.width, canvasOriginal.height);
+
+                // Captura el estado inicial del canvas original
+                estado = contextoOriginal.getImageData(0, 0, canvasOriginal.width, canvasOriginal.height);
+
+                // Inicia la actualización continua de los cuadros
+                actualizarCuadro();
+
+                // Cambia el estado en la UI para indicar que se está capturando
+                document.getElementById('estado').textContent = 'Capturando pantalla...';
+            };
+        } catch (error) {
+            // Muestra un mensaje de error si no se puede capturar la pantalla
+            console.error("Error al capturar la pantalla:", error);
+            document.getElementById('estado').textContent = 'Error al iniciar la captura.';
+        }
+    }
+
+    // Función para detener la captura de pantalla
+    function detenerCaptura() {
+        // Detiene la captura
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        // Pausa el video si estaba reproduciéndose
+        if (video) {
+            video.pause();
+        }
+
+        // Cancela la animación continua de cuadros
+        cancelAnimationFrame(cuadroAnimacion);
+
+        // Limpia los contenidos de los canvases
+        if (contextoOriginal) contextoOriginal.clearRect(0, 0, canvasOriginal.width, canvasOriginal.height);
+        if (contextoProcesado) contextoProcesado.clearRect(0, 0, canvasProcesado.width, canvasProcesado.height);
+
+        // Actualiza el estado en la UI para indicar que la captura se detuvo
+        document.getElementById('estado').textContent = 'Captura detenida';
+    }
+
+    // Función para actualizar los cuadros continuamente
+    function actualizarCuadro() {
+        // Dibuja el cuadro actual del video en el canvas original
+        contextoOriginal.drawImage(video, 0, 0, canvasOriginal.width, canvasOriginal.height);
+
+        // Obtiene los datos de imagen del canvas original
+        let nuevoEstado = contextoOriginal.getImageData(0, 0, canvasOriginal.width, canvasOriginal.height);
+        // Obtiene los datos de imagen del canvas procesado
+        let procesado = contextoProcesado.getImageData(0, 0, canvasOriginal.width, canvasOriginal.height);
+
+        // Itera por cada píxel y verifica si ha cambiado desde el estado anterior
+        for (let i = 0; i < nuevoEstado.data.length; i += 4) {
+            // Compara los canales de color (rojo, verde, azul) del píxel actual
+            if (nuevoEstado.data[i] === estado.data[i] &&
+                nuevoEstado.data[i + 1] === estado.data[i + 1] &&
+                nuevoEstado.data[i + 2] === estado.data[i + 2]) {
+                // Si el píxel no cambió, se pinta blanco
+                procesado.data[i] = procesado.data[i + 1] = procesado.data[i + 2] = 255; // Blanco
+                procesado.data[i + 3] = 255; // Opacidad
+            } else {
+                // Si el píxel cambió, se pinta negro
+                procesado.data[i] = procesado.data[i + 1] = procesado.data[i + 2] = 0; // Negro
+                procesado.data[i + 3] = 255; // Opacidad
+            }
+        }
+
+        // Actualiza el canvas procesado con los datos nuevos
+        contextoProcesado.putImageData(procesado, 0, 0);
+        // Actualiza el estado actual con los datos del nuevo cuadro
+        estado = nuevoEstado;
+
+        // Llama recursivamente a esta función para el siguiente cuadro
+        cuadroAnimacion = requestAnimationFrame(actualizarCuadro);
+    }
+
+    // Asigna eventos a los botones de control
+    document.getElementById('iniciarCaptura').addEventListener('click', () => {
+        // Deshabilita el botón de inicio y habilita el de detener
+        document.getElementById('iniciarCaptura').disabled = true;
+        document.getElementById('detenerCaptura').disabled = false;
+        iniciarCaptura();
+    });
+
+    document.getElementById('detenerCaptura').addEventListener('click', () => {
+        // Habilita el botón de inicio y deshabilita el de detener
+        document.getElementById('iniciarCaptura').disabled = false;
+        document.getElementById('detenerCaptura').disabled = true;
+        detenerCaptura();
+    });
+</script>

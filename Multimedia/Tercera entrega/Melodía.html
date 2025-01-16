@@ -1,0 +1,227 @@
+<script>
+// Referencias a los lienzos y contextos de dibujo
+const lienzoMusical = document.getElementById('lienzoMusical');
+const lienzoMelodia = document.getElementById('lienzoMelodia');
+const ctx = lienzoMusical.getContext('2d');
+const ctxMelodia = lienzoMelodia.getContext('2d');
+
+// Configuración de audio
+let contextoAudio; // Contexto de audio principal
+let nodoGananciaPrincipal; // Nodo para controlar el volumen global
+
+// Factor de velocidad de las partículas
+let factorVelocidad = 1;
+
+// Listener para inicializar el contexto de audio
+document.getElementById('iniciarSonido').onclick = () => {
+    if (!contextoAudio) {
+        // Crea el contexto de audio y un nodo de ganancia
+        contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+        nodoGananciaPrincipal = contextoAudio.createGain();
+        nodoGananciaPrincipal.gain.value = 0.2; // Configura el volumen inicial
+        nodoGananciaPrincipal.connect(contextoAudio.destination); // Conecta el nodo de ganancia al destino de audio
+    }
+};
+
+// Listener para ajustar el volumen mediante el control deslizante
+document.getElementById('controlVolumen').oninput = (evento) => {
+    const volumen = evento.target.value;
+    if (nodoGananciaPrincipal) {
+        nodoGananciaPrincipal.gain.value = volumen; // Ajusta el volumen en tiempo real
+    }
+};
+
+// Listener para ajustar la velocidad de las partículas
+document.getElementById('controlVelocidad').oninput = (evento) => {
+    factorVelocidad = parseFloat(evento.target.value); // Actualiza el factor de velocidad
+};
+
+// Notas musicales
+const frecuencias = {
+    C: 261.63,
+    D: 293.66,
+    E: 329.63,
+    F: 349.23,
+    G: 392.00,
+    A: 440.00,
+    B: 493.88
+};
+
+// Colores asociados a las notas musicales
+const coloresNotas = {
+    C: '#FF0000', // Rojo
+    D: '#FF7F00', // Naranja
+    E: '#FFFF00', // Amarillo
+    F: '#00FF00', // Verde
+    G: '#0000FF', // Azul
+    A: '#4B0082', // Índigo
+    B: '#9400D3'  // Violeta
+};
+
+// Configuración de plataformas
+const anchoPlataforma = 80; // Ancho de las plataformas
+const altoPlataforma = 10; // Altura de las plataformas
+const espacioPlataformaX = 150; // Espacio horizontal entre plataformas
+const espacioPlataformaY = 80;  // Espacio vertical entre plataformas
+const plataformas = []; // Arreglo para almacenar las plataformas
+const filas = 5; // Número de filas
+const columnas = 6; // Número de columnas
+const clavesNotas = Object.keys(frecuencias); // Claves de las notas musicales
+
+// Crear una cuadrícula de plataformas con colores y notas musicales
+for (let fila = 0; fila < filas; fila++) {
+    for (let columna = 0; columna < columnas; columna++) {
+        const nota = clavesNotas[(fila * columnas + columna) % clavesNotas.length]; // Selección cíclica de notas
+        plataformas.push({
+            nota: nota,
+            x: columna * (anchoPlataforma + espacioPlataformaX), // Posición horizontal
+            y: fila * (altoPlataforma + espacioPlataformaY), // Posición vertical
+            color: coloresNotas[nota] // Color asociado a la nota
+        });
+    }
+}
+
+// Dibujar las plataformas en el lienzo
+function dibujarPlataformas() {
+    plataformas.forEach(plataforma => {
+        ctx.fillStyle = plataforma.color; // Color de la plataforma
+        ctx.fillRect(plataforma.x, plataforma.y, anchoPlataforma, altoPlataforma); // Dibuja el rectángulo
+
+        // Escribe la nota musical encima de la plataforma
+        ctx.fillStyle = '#000000';
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(plataforma.nota, plataforma.x + anchoPlataforma / 2, plataforma.y + altoPlataforma / 2 + 4);
+    });
+}
+
+// Dibujar las notas musicales reproducidas en el lienzo de melodía
+let melodiaX = 10; // Posición inicial en el lienzo
+function escribirMelodia(nota) {
+    ctxMelodia.fillStyle = coloresNotas[nota]; // Color de la nota
+    ctxMelodia.font = "20px Arial";
+    ctxMelodia.textAlign = "left";
+    ctxMelodia.fillText(nota, melodiaX, lienzoMelodia.height / 2 + 8); // Dibuja la nota
+    melodiaX += 30; // Avanza la posición para la siguiente nota
+
+    // Si se llega al final del lienzo, se limpia y se reinicia
+    if (melodiaX > lienzoMelodia.width) {
+        ctxMelodia.clearRect(0, 0, lienzoMelodia.width, lienzoMelodia.height);
+        melodiaX = 10;
+    }
+}
+
+// Reproducir un sonido basado en la nota seleccionada
+function reproducirSonido(nota) {
+    if (!contextoAudio) return; // Si no hay contexto de audio, no hace nada
+
+    const osc = contextoAudio.createOscillator(); 
+    const nodoGanancia = contextoAudio.createGain(); 
+
+    osc.frequency.value = frecuencias[nota]; // Asigna la frecuencia de la nota
+    osc.type = 'sine'; // Tipo de onda 
+
+    const tiempoAtaque = 0.1;
+    const tiempoDecaimiento = 0.2;
+    const nivelSostenido = 0.2;
+    const tiempoLiberacion = 0.5;
+
+    nodoGanancia.gain.setValueAtTime(0, contextoAudio.currentTime);
+    nodoGanancia.gain.linearRampToValueAtTime(0.03, contextoAudio.currentTime + tiempoAtaque);
+    nodoGanancia.gain.linearRampToValueAtTime(nivelSostenido, contextoAudio.currentTime + tiempoAtaque + tiempoDecaimiento);
+    nodoGanancia.gain.linearRampToValueAtTime(0, contextoAudio.currentTime + tiempoAtaque + tiempoDecaimiento + tiempoLiberacion);
+
+    osc.connect(nodoGanancia);
+    nodoGanancia.connect(nodoGananciaPrincipal);
+
+    osc.start(); 
+    osc.stop(contextoAudio.currentTime + tiempoAtaque + tiempoDecaimiento + tiempoLiberacion); // Detiene después de la duración
+
+    escribirMelodia(nota); // Escribe la nota en el lienzo de melodía
+}
+
+// Clase para las partículas que se mueven por el lienzo
+class Particula {
+    constructor(x, y, velocidad = 3) {
+        this.x = x; // Posición inicial X
+        this.y = y; // Posición inicial Y
+        this.radio = 8; // Radio de la partícula
+        this.velocidadBaseX = (Math.random() - 0.5) * velocidad; // Velocidad inicial aleatoria en X
+        this.velocidadBaseY = (Math.random() - 0.5) * velocidad; // Velocidad inicial aleatoria en Y
+        this.color = '#000000'; // Color de la partícula
+    }
+
+    get velocidadX() {
+        return this.velocidadBaseX * factorVelocidad; // Velocidad ajustada por el factor global
+    }
+
+    get velocidadY() {
+        return this.velocidadBaseY * factorVelocidad; // Velocidad ajustada por el factor global
+    }
+
+    mover() {
+        this.x += this.velocidadX; // Actualiza la posición X
+        this.y += this.velocidadY; // Actualiza la posición Y
+
+        // Detecta colisiones con plataformas
+        plataformas.forEach(plataforma => {
+            if (
+                this.x + this.radio > plataforma.x &&
+                this.x - this.radio < plataforma.x + anchoPlataforma &&
+                this.y + this.radio > plataforma.y &&
+                this.y - this.radio < plataforma.y + altoPlataforma
+            ) {
+                // Ajusta la posición y velocidad al chocar con una plataforma
+                if (this.velocidadBaseY > 0) {
+                    this.y = plataforma.y - this.radio - 1; // Rebote desde arriba
+                } else {
+                    this.y = plataforma.y + altoPlataforma + this.radio + 1; // Rebote desde abajo
+                }
+                this.velocidadBaseY *= -1; // Invierte la dirección vertical
+                this.velocidadBaseX *= -1; // Invierte la dirección horizontal
+
+                reproducirSonido(plataforma.nota); // Reproduce el sonido de la nota de la plataforma
+            }
+        });
+
+        // Rebote en los bordes del lienzo
+        if (this.x - this.radio < 0 || this.x + this.radio > lienzoMusical.width) {
+            this.velocidadBaseX *= -1;
+        }
+        if (this.y - this.radio < 0 || this.y + this.radio > lienzoMusical.height) {
+            this.velocidadBaseY *= -1;
+        }
+    }
+
+    dibujar() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radio, 0, 2 * Math.PI); // Dibuja un círculo
+        ctx.fillStyle = this.color;
+        ctx.fill();
+    }
+}
+
+// Crear un array de partículas inicial
+let particulas = [];
+for (let i = 0; i < 5; i++) {
+    particulas.push(new Particula(Math.random() * lienzoMusical.width, Math.random() * lienzoMusical.height));
+}
+
+// Agregar una nueva partícula al hacer clic en el botón
+document.getElementById('agregarParticula').onclick = () => {
+    particulas.push(new Particula(Math.random() * lienzoMusical.width, Math.random() * lienzoMusical.height));
+};
+
+// Bucle de animación principal
+function animar() {
+    ctx.clearRect(0, 0, lienzoMusical.width, lienzoMusical.height); // Limpia el lienzo
+    dibujarPlataformas(); // Dibuja las plataformas
+    particulas.forEach(particula => {
+        particula.mover(); // Mueve cada partícula
+        particula.dibujar(); // Dibuja cada partícula
+    });
+    requestAnimationFrame(animar); // Solicita el siguiente cuadro de animación
+}
+
+animar(); // Inicia la animación
+</script>

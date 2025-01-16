@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor cVideo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .cvideo {
+            width: 600px;
+            max-width: 90%;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+
+        .cvideo video {
+            width: 100%;
+        }
+
+        .cvideo .barracontroles {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .cvideo .barracontroles button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .cvideo .barracontroles button:hover {
+            transform: scale(1.1);
+        }
+
+        .cvideo .barracontroles button img {
+            width: 100%;
+            height: auto;
+        }
+
+        .cvideo .barraprogreso {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            overflow: hidden;
+        }
+
+        .cvideo .barraprogreso .progreso {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .cvideo input[type="range"] {
+            width: 100px;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .cvideo input[type="range"].visible {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cvideo">
+        <video src="videoejemplo.mkv"></video>
+        <div class="barracontroles">
+            <button id="rewind"><img src="retroceder.png" alt="Rewind"></button>
+            <button id="playButton"><img src="play.png" alt="Play"></button>
+            <button id="forward"><img src="avanzar.png" alt="Forward"></button>
+            <button id="volumeButton"><img src="volumenmas.png" alt="Volume"></button>
+            <input type="range" id="volumeControl" min="0" max="100" step="1" value="100">
+        </div>
+        <div class="barraprogreso">
+            <div class="progreso"></div>
+        </div>
+    </div>
+
+<script>
+window.onload = function () {
+    // Referencias a los elementos del reproductor
+    let video = document.querySelector("video"); // Elemento de video
+    let playButton = document.getElementById("playButton"); // Botón de reproducción/pausa
+    let rewind = document.getElementById("rewind"); // Botón para retroceder 10 segundos
+    let forward = document.getElementById("forward"); // Botón para avanzar 10 segundos
+    let volumeButton = document.getElementById("volumeButton"); // Botón para mostrar/ocultar control de volumen
+    let volumeControl = document.getElementById("volumeControl"); // Control deslizante del volumen
+    let progreso = document.querySelector(".progreso"); // Barra de progreso del video
+    let barraprogreso = document.querySelector(".barraprogreso"); // Contenedor de la barra de progreso
+
+    // Control de reproducción/pausa
+    playButton.onclick = function () {
+        if (video.paused) {
+            video.play(); // Reproduce el video
+            playButton.innerHTML = "<img src='pausa.png' alt='Pause'>"; // Cambia icono a pausa
+        } else {
+            video.pause(); // Pausa el video
+            playButton.innerHTML = "<img src='play.png' alt='Play'>"; // Cambia icono a reproducción
+        }
+    };
+
+    // Retroceder 10 segundos
+    rewind.onclick = function () {
+        video.currentTime = Math.max(0, video.currentTime - 10); // Reduce 10 segundos del tiempo actual
+    };
+
+    // Avanzar 10 segundos
+    forward.onclick = function () {
+        video.currentTime = Math.min(video.duration, video.currentTime + 10); // Aumenta 10 segundos del tiempo actual
+    };
+
+    // Mostrar/ocultar el control de volumen
+    volumeButton.onclick = function () {
+        if (volumeControl.classList.contains("visible")) {
+            volumeControl.classList.remove("visible"); // Oculta el control de volumen
+        } else {
+            volumeControl.classList.add("visible"); // Muestra el control de volumen
+        }
+    };
+
+    // Ajustar el volumen con el control deslizante
+    volumeControl.oninput = function () {
+        video.volume = this.value / 100; // Convierte el valor del control (0-100) a rango de volumen (0-1)
+    };
+
+    // Actualizar la barra de progreso en función del tiempo actual del video
+    video.addEventListener("timeupdate", function () {
+        let porcentaje = (video.currentTime / video.duration) * 100; // Calcula el porcentaje de progreso
+        progreso.style.width = porcentaje + "%"; // Ajusta la longitud de la barra de progreso
+    });
+
+    // Saltar a un punto específico del video al hacer clic en la barra de progreso
+    barraprogreso.addEventListener("click", function (e) {
+        const rect = barraprogreso.getBoundingClientRect(); // Obtiene las dimensiones de la barra
+        const clickX = e.clientX - rect.left; // Calcula la posición del clic relativo a la barra
+        const width = rect.width; // Ancho total de la barra
+        const porcentaje = clickX / width; // Determina el porcentaje del clic
+        video.currentTime = porcentaje * video.duration; // Ajusta el tiempo del video al porcentaje calculado
+    });
+};
+</script>
+
+
+
+</body>
+</html>
