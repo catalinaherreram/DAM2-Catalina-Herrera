@@ -1,4 +1,19 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melodía</title>
+</head>
+<body>
+    <canvas id="lienzoMusical" width="800" height="400"></canvas>
+    <canvas id="lienzoMelodia" width="800" height="100"></canvas>
+    <button id="iniciarSonido">Iniciar sonido</button>
+    <button id="agregarParticula">Agregar partícula</button>
+    <input type="range" id="controlVolumen" min="0" max="1" step="0.01" value="0.2">
+    <input type="range" id="controlVelocidad" min="0.1" max="5" step="0.1" value="1">
+
+    <script>
 // Referencias a los lienzos y contextos de dibujo
 const lienzoMusical = document.getElementById('lienzoMusical');
 const lienzoMelodia = document.getElementById('lienzoMelodia');
@@ -225,3 +240,8 @@ function animar() {
 
 animar(); // Inicia la animación
 </script>
+
+</body>
+</html>
+
+
