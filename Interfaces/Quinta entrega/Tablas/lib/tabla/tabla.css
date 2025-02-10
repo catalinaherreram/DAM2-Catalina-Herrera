@@ -1,0 +1,32 @@
+.tabla {
+    width: 100%;
+    font-family: monospace;
+    border-collapse: collapse;
+}
+
+.tabla thead tr {
+    background: gray;
+    color: white;
+}
+
+.tabla thead tr th {
+    padding: 10px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.tabla tbody tr td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.tabla tbody tr:nth-child(odd) {
+    background: rgb(240, 240, 240);
+}
+
+/* Efecto hover mejorado */
+.tabla tbody tr:hover {
+    background: lightblue;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}

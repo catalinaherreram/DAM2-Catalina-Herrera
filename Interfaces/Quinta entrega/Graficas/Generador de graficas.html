@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de gráficos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: #f4f4f4;
+    padding: 20px;
+}
+
+h2 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+#tipoGrafico {
+    margin-bottom: 20px;
+}
+
+select, button {
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button {
+    background: gray;
+    color: white;
+    border: none;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: lightgray;
+}
+
+table {
+    width: 60%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+th {
+    background: gray;
+    color: white;
+    padding: 12px;
+    font-size: 16px;
+}
+
+td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+tr:hover {
+    background: #f1f1f1;
+}
+
+input[type="text"], input[type="number"] {
+    padding: 6px;
+    width: 90%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+canvas {
+    margin-top: 20px;
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    background: white;
+    display: block;
+    margin: 20px auto;
+}
+
+.eliminar {
+    cursor: pointer;
+    color: red;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.eliminar:hover {
+    transform: scale(1.2);
+}
+
+#errorMsg {
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+    </style>
+</head>
+<body>
+
+    <h2>Generador de gráficos</h2>
+
+    <div>
+        <label>Tipo de gráfico:</label>
+        <select id="tipo">
+            <option value="tarta">Torta</option>
+            <option value="anillo">Anillo</option>
+            <option value="barras">Barras</option>
+        </select>
+        <button onclick="agregarFila()">Agregar dato</button>
+    </div>
+
+    <table id="datos">
+        <thead>
+            <tr>
+                <th>Etiqueta</th>
+                <th>Porcentaje</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <button onclick="generarGrafico()">Generar gráfico</button>
+    <button onclick="descargarInforme()">📄 Descargar Informe</button>
+    
+    <p id="errorMsg"></p>
+
+    <div id="contienegraficas"></div>
+
+    <script>
+        function agregarFila() {
+            let tabla = document.querySelector("#datos tbody");
+            let fila = document.createElement("tr");
+
+            fila.innerHTML = `
+                <td><input type="text" placeholder="Etiqueta"></td>
+                <td><input type="number" placeholder="%" min="1" max="100"></td>
+                <td class="eliminar" onclick="eliminarFila(this)">❌</td>
+            `;
+
+            tabla.appendChild(fila);
+        }
+
+        function eliminarFila(elemento) {
+            elemento.closest("tr").remove(); // Ahora solo elimina la fila específica
+        }
+
+        function generarGrafico() {
+            let filas = document.querySelectorAll("#datos tbody tr");
+            let datos = [];
+            let totalPorcentajes = 0;
+
+            filas.forEach(fila => {
+                let etiqueta = fila.cells[0].querySelector("input").value.trim();
+                let porcentaje = parseInt(fila.cells[1].querySelector("input").value);
+
+                if (etiqueta === "" || isNaN(porcentaje) || porcentaje <= 0) {
+                    document.getElementById("errorMsg").innerText = "Las etiquetas deben tener un nombre y un porcentaje válido.";
+                    return;
+                }
+
+                datos.push({ etiqueta, porcentaje });
+                totalPorcentajes += porcentaje;
+            });
+
+            if (totalPorcentajes !== 100) {
+                document.getElementById("errorMsg").innerText = "La suma de los porcentajes debe ser 100%.";
+                return;
+            }
+
+            document.getElementById("errorMsg").innerText = "";
+
+            let tipoGrafico = document.getElementById("tipo").value;
+            dibujarGrafico(datos, tipoGrafico);
+        }
+
+        function dibujarGrafico(datos, tipo) {
+            let contenedor = document.querySelector("#contienegraficas");
+            contenedor.innerHTML = "";
+
+            let canvas = document.createElement("canvas");
+            canvas.id = "graficoCanvas";
+            canvas.width = 512;
+            canvas.height = 512;
+            let ctx = canvas.getContext("2d");
+
+            contenedor.appendChild(canvas);
+
+            let colores = ["red", "blue", "green", "orange", "purple", "pink"];
+            let total = datos.reduce((acc, d) => acc + d.porcentaje, 0);
+
+            if (tipo === "barras") {
+                let barWidth = canvas.width / datos.length;
+                let maxHeight = canvas.height - 50;
+
+                datos.forEach((dato, index) => {
+                    ctx.fillStyle = colores[index % colores.length];
+                    let barHeight = (dato.porcentaje / 100) * maxHeight;
+
+                    ctx.fillRect(index * barWidth + 10, canvas.height - barHeight, barWidth - 20, barHeight);
+                    ctx.fillStyle = "black";
+                    ctx.fillText(dato.etiqueta, index * barWidth + barWidth / 2, canvas.height - 5);
+                });
+
+            } else {
+                let anguloInicio = 0;
+
+                datos.forEach((dato, index) => {
+                    let anguloFin = (dato.porcentaje / total) * 2 * Math.PI;
+                    ctx.fillStyle = colores[index % colores.length];
+
+                    ctx.beginPath();
+                    ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                    ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 10, anguloInicio, anguloInicio + anguloFin);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    anguloInicio += anguloFin;
+                });
+
+                if (tipo === "anillo") {
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function descargarInforme() {
+            const { jsPDF } = window.jspdf;
+            let pdf = new jsPDF();
+            
+            let filas = document.querySelectorAll("#datos tbody tr");
+            let datos = [];
+
+            filas.forEach(fila => {
+                let etiqueta = fila.cells[0].querySelector("input").value.trim();
+                let porcentaje = fila.cells[1].querySelector("input").value.trim();
+                datos.push([etiqueta, porcentaje + "%"]);
+            });
+
+            pdf.text("Informe de Gráfica", 10, 10);
+            pdf.autoTable({
+                head: [["Etiqueta", "Porcentaje"]],
+                body: datos,
+                startY: 20
+            });
+
+            let canvas = document.getElementById("graficoCanvas");
+
+            if (canvas) {
+                html2canvas(canvas).then(canvasImg => {
+                    let imgData = canvasImg.toDataURL("image/png");
+                    pdf.addImage(imgData, "PNG", 15, pdf.autoTable.previous.finalY + 10, 180, 100);
+                    pdf.save("informe.pdf");
+                });
+            } else {
+                pdf.text("No hay gráfico generado.", 10, pdf.autoTable.previous.finalY + 20);
+                pdf.save("informe.pdf");
+            }
+        }
+    </script>
+
+</body>
+</html>
