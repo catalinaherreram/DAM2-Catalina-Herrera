@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoomies</title>
+    <style>
+        /* ======= ESTILOS GENERALES ======= */
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e); /* Fondo con degradado */
+            color: white;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin: 20px 0;
+            text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.2);
+        }
+
+        /* ======= CONTENEDOR DE VIDEO ======= */
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        video, canvas {
+            width: 320px;
+            height: 240px;
+            border-radius: 12px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            background: black;
+        }
+
+        /* ======= CONTROLES DE VIDEO Y AUDIO ======= */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px;
+        }
+
+        .controls button {
+            padding: 10px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0px 4px 8px rgba(255, 255, 255, 0.2);
+        }
+
+        .controls button img {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* Estados de botones (Verde: Activado | Rojo: Desactivado) */
+        .active {
+            background: #27ae60;
+        }
+
+        .inactive {
+            background: #e74c3c;
+        }
+
+        /* ======= CONTENEDOR DE VIDEOS DE OTROS USUARIOS ======= */
+        #lienzos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 20px;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Zoomies</h1>
+
+    <!-- Contenedor donde se mostrará el video del usuario -->
+    <div class="video-container">
+        <video id="video" autoplay></video>
+    </div>
+
+    <!-- Botones para controlar la cámara y el micrófono -->
+    <div class="controls">
+        <button id="toggleVideo" class="active">
+            <img src="cam.png" alt="Cámara">
+        </button>
+        <button id="toggleAudio" class="active">
+            <img src="mic.png" alt="Micrófono">
+        </button>
+    </div>
+
+    <!-- Contenedor donde se mostrarán los streams de otros usuarios -->
+    <div id="lienzos"></div>
+
+    <script>
+        ////////////////////////////////// VARIABLES GLOBALES //////////////////////////////
+        const video = document.getElementById('video'); // Elemento de video del usuario
+        const toggleVideoBtn = document.getElementById('toggleVideo'); // Botón para activar/desactivar la cámara
+        const toggleAudioBtn = document.getElementById('toggleAudio'); // Botón para activar/desactivar el micrófono
+
+        // Se crea una conexión WebSocket con el servidor
+        const socket = new WebSocket("ws://192.168.1.17:3000");
+
+        // Se genera un identificador único para cada usuario basado en la hora actual
+        const identificador = Date.now();
+
+        // Diccionario para almacenar los lienzos (canvas) de cada usuario
+        const streams = {};  
+
+        // Variable que almacenará el stream de video y audio del usuario
+        let stream;  
+
+        //////////////////////////////// CONEXIÓN DE SOCKET //////////////////////////////
+        socket.addEventListener("open", () => console.log("Conexión WebSocket abierta"));
+        socket.addEventListener("error", (event) => console.error("Error en WebSocket:", event));
+
+        //////////////////////////////// INICIAR VIDEO Y AUDIO //////////////////////////////
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }) // Se solicita acceso a la cámara y micrófono
+            .then(s => {
+                stream = s; // Se guarda el stream globalmente
+                video.srcObject = stream; // Se asigna el stream al elemento <video>
+                enviarFrames(); // Se inicia la transmisión de video
+            })
+            .catch(err => console.error('Error al acceder a la cámara o micrófono:', err));
+
+        ////////////////////////////////// TRANSMISIÓN DE VIDEO //////////////////////////////
+        function enviarFrames() {
+            function enviar() {
+                const canvas = document.createElement("canvas"); // Se crea un canvas para capturar los frames
+                canvas.width = 320;
+                canvas.height = 240;
+                const contexto = canvas.getContext('2d'); // Se obtiene el contexto 2D del canvas
+
+                contexto.drawImage(video, 0, 0, canvas.width, canvas.height); // Se dibuja el video en el canvas
+                canvas.toBlob(blob => { // Se convierte la imagen en un blob (archivo binario)
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        socket.send(JSON.stringify({ // Se envía el frame como JSON a través del WebSocket
+                            "identificador": identificador,
+                            "datos": reader.result
+                        }));
+                    };
+                    reader.readAsDataURL(blob); // Se convierte el blob en base64
+                }, 'image/webp');
+
+                requestAnimationFrame(enviar); // Llama a la función de nuevo en el siguiente frame
+            }
+
+            enviar();
+        }
+
+        //////////////////////////////// RECIBIR VIDEO DE OTROS USUARIOS //////////////////////////////
+        socket.addEventListener("message", async (event) => {
+            console.log("Mensaje recibido del servidor:", event.data);
+            try {
+                const datos = JSON.parse(event.data); // Convertir el mensaje en JSON
+                procesarVideo(datos); // Procesar el video recibido
+            } catch (error) {
+                console.error("Error al parsear JSON:", error);
+            }
+        });
+
+        function procesarVideo(datos) {
+            if (!streams[datos.identificador]) { // Si el usuario no tiene un canvas asignado
+                console.log("Creando nuevo canvas para usuario:", datos.identificador);
+
+                const nuevoCanvas = document.createElement("canvas"); // Crear un nuevo canvas para el usuario
+                nuevoCanvas.width = 320;
+                nuevoCanvas.height = 240;
+                nuevoCanvas.id = `user-${datos.identificador}`;
+                const nuevoContexto = nuevoCanvas.getContext("2d");
+
+                document.querySelector("#lienzos").appendChild(nuevoCanvas); // Agregar el canvas a la página
+                streams[datos.identificador] = nuevoContexto; // Guardar el contexto en el diccionario
+            }
+
+            const img = new Image(); // Crear una nueva imagen
+            img.src = datos.datos; // Asignar la imagen recibida
+            img.onload = () => { // Cuando la imagen cargue, dibujarla en el canvas correspondiente
+                streams[datos.identificador].clearRect(0, 0, 320, 240);
+                streams[datos.identificador].drawImage(img, 0, 0);
+            };
+        }
+
+    </script>
+</body>
+</html>
