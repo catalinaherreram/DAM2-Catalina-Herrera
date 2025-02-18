@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buzón de Correo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            background: #f4f4f4;
+        }
+
+        /* Barra lateral */
+        nav {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        nav h2 {
+            margin-bottom: 20px;
+        }
+
+        nav ul {
+            list-style: none;
+            width: 100%;
+        }
+
+        nav ul li {
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 5px;
+        }
+
+        nav ul li:hover {
+            background: #34495e;
+        }
+
+        /* Contenido principal */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #enviar, #bandeja {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* Diseño de los correos */
+        article {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Formulario de enviar correo */
+        #enviar {
+            display: none;
+        }
+
+        #enviar input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Contenedor del editor */
+        #editor-container {
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            background: white;
+        }
+
+        /* Barra de herramientas */
+        .barra-herramientas {
+            display: flex;
+            gap: 5px;
+            padding: 8px;
+            background: #eaeaea;
+            border-bottom: 1px solid #ccc;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .barra-herramientas button {
+            padding: 5px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .barra-herramientas button:hover {
+            background: #ddd;
+        }
+
+        .barra-herramientas select,
+        .barra-herramientas input[type="color"] {
+            padding: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            height: 32px;
+        }
+
+        /* Editor */
+        .editor {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            outline: none;
+            background: white;
+            overflow-y: auto;
+        }
+
+        /* Bandeja de entrada */
+        #bandeja {
+            display: none;
+        }
+
+        /* Botón de enviar */
+        #enviar button {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        #enviar button:hover {
+            background: gray;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Barra lateral -->
+    <nav>
+        <h2>Correo</h2>
+        <ul>
+            <li id="nuevocorreo">Nuevo correo</li>
+            <li id="recibidos">Recibidos</li>
+            <li id="enviados">Enviados</li>
+        </ul>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main>
+        <div id="enviar">
+            <article>
+                <h3>Asunto: <input type="text" id="asunto"></h3>
+                <h4>Para: <input type="text" id="para"></h4>
+                <p>Mensaje:</p>
+                <div id="editor-container">
+                    <div class="barra-herramientas">
+                        <button onclick="document.execCommand('bold')"><b>B</b></button>
+                        <button onclick="document.execCommand('italic')"><i>I</i></button>
+                        <button onclick="document.execCommand('underline')"><u>U</u></button>
+                        <button onclick="document.execCommand('justifyLeft')">🡠</button>
+                        <button onclick="document.execCommand('justifyCenter')">🡡</button>
+                        <button onclick="document.execCommand('justifyRight')">🡢</button>
+                        <button onclick="document.execCommand('insertUnorderedList')">• Lista</button>
+                        <input type="color" onchange="document.execCommand('foreColor', false, this.value)">
+                        <select onchange="document.execCommand('fontSize', false, this.value)">
+                            <option value="1">10px</option>
+                            <option value="2">12px</option>
+                            <option value="3">14px</option>
+                            <option value="4">16px</option>
+                            <option value="5">18px</option>
+                        </select>
+                    </div>
+                    <div class="editor" contenteditable="true"></div>
+                </div>
+                <button id="enviarCorreo">Enviar</button>
+            </article>
+        </div>
+
+        <div id="bandeja">
+            <h3 id="bandejaTitulo">Bandeja de entrada</h3>
+            <div id="correos"></div> 
+        </div>
+
+    </main>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Función para obtener los correos recibidos
+        function cargarRecibidos() {
+    fetch("http://localhost:5000/recibir")
+        .then(response => response.json())
+        .then(data => {
+            let bandeja = document.querySelector("#bandeja");
+            bandeja.innerHTML = "<h3>Correos Recibidos</h3>";
+            data.forEach((correo, index) => {
+                let correoHTML = `
+                    <article>
+                        <h4>De: ${correo.De}</h4>
+                        <p><strong>Asunto:</strong> ${correo.Asunto}</p>
+                        <p><strong>Fecha:</strong> ${correo.Fecha}</p>
+                        <p>${correo.Cuerpo}</p>
+                        <button onclick="eliminarCorreoRecibido('${correo.mail_id}')">🗑️</button>
+                    </article>`;
+                bandeja.innerHTML += correoHTML;
+            });
+        })
+        .catch(error => console.error("Error al cargar correos:", error));
+}
+
+function eliminarCorreoRecibido(mail_id) {
+    fetch("http://localhost:5000/eliminar_recibido", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mail_id: mail_id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.mensaje || data.error);
+        cargarRecibidos(); // Recargar correos después de eliminar
+    })
+    .catch(error => console.error("Error al eliminar correo:", error));
+}
+
+
+        // Función para obtener los correos enviados
+        function cargarEnviados() {
+    fetch("http://localhost:5000/enviados")
+        .then(response => response.json())
+        .then(data => {
+            let bandeja = document.querySelector("#bandeja");
+            bandeja.innerHTML = "<h3>Correos Enviados</h3>";
+            data.forEach(correo => {
+                let correoHTML = `
+                    <article>
+                        <h4>Para: ${correo.Para}</h4>
+                        <p><strong>Asunto:</strong> ${correo.Asunto}</p>
+                        <p>${correo.Cuerpo}</p>
+                        <button onclick="eliminarCorreoEnviado('${correo.Asunto}')">🗑️</button>
+                    </article>`;
+                bandeja.innerHTML += correoHTML;
+            });
+        })
+        .catch(error => console.error("Error al cargar correos enviados:", error));
+}
+
+function eliminarCorreoEnviado(asunto) {
+    fetch("http://localhost:5000/eliminar_enviado", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asunto: asunto })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.mensaje || data.error);
+        cargarEnviados(); // Recargar la lista después de eliminar
+    })
+    .catch(error => console.error("Error al eliminar correo enviado:", error));
+}
+
+
+        // Función para enviar un correo
+        document.querySelector("#enviarCorreo").onclick = function() {
+            let mensajeHtml = document.querySelector(".editor").innerHTML;
+            let asunto = document.querySelector("#asunto").value;
+            let para = document.querySelector("#para").value;
+
+            let mensaje = {
+                "asunto": asunto,
+                "para": para,
+                "mensaje": mensajeHtml
+            };
+
+            fetch("http://localhost:5000/enviar", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mensaje)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Correo enviado exitosamente");
+
+                // Limpiar los campos después de enviar
+                document.querySelector("#asunto").value = "";
+                document.querySelector("#para").value = "";
+                document.querySelector(".editor").innerHTML = "";
+            })
+            .catch(error => console.error("Error al enviar el correo:", error));
+        };
+        
+
+        // Mostrar el formulario de nuevo correo
+        document.querySelector("#nuevocorreo").onclick = function() {
+            document.querySelector("#enviar").style.display = "block";
+            document.querySelector("#bandeja").style.display = "none";
+        };
+
+        // Cargar correos recibidos cuando se haga clic en "Recibidos"
+        document.querySelector("#recibidos").onclick = function() {
+            document.querySelector("#enviar").style.display = "none";
+            document.querySelector("#bandeja").style.display = "block";
+            cargarRecibidos();
+        };
+
+        // Opción para ver los correos enviados (requiere backend)
+        document.querySelector("#enviados").onclick = function() {
+            document.querySelector("#enviar").style.display = "none";
+            document.querySelector("#bandeja").style.display = "block";
+            cargarEnviados();
+        };
+    });
+</script>
+
+
+</body>
+</html>
