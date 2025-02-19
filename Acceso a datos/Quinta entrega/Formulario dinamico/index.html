@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario dinámico</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>Formulario dinámico</h2>
+        <form id="formulario">
+            <label>Nombre:</label>
+            <input type="text" name="nombre" required>
+
+            <label>Edad:</label>
+            <input type="number" name="edad" required>
+
+            <label>Email:</label>
+            <input type="email" name="email" required>
+
+            <label>Guardar en:</label>
+            <select name="storage_mode">
+                <option value="mysql">Base de datos (MySQL)</option>
+                <option value="xml">Archivo XML</option>
+            </select>
+
+            <button type="submit">Guardar</button>
+        </form>
+
+        <a href="panel.php" class="btn">Acceder al panel de control</a>
+    </div>
+
+    <script>
+        document.getElementById("formulario").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+            let jsonData = {};
+            formData.forEach((value, key) => jsonData[key] = value);
+
+            fetch("guardar.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => alert("Error: " + error));
+        });
+    </script>
+
+</body>
+</html>
